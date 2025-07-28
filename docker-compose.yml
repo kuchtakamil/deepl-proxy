@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  deepl-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/arm64
+    container_name: deepl-proxy
+    restart: unless-stopped
+    ports:
+      - "3000:3000"  # Application port (backend serves frontend)
+    environment:
+      - DEEPL_API_KEY=${DEEPL_API_KEY}
+      - RUST_LOG=info
+    env_file:
+      - .env  # Optional: load from .env file
+    volumes:
+      # Optional: mount for persistent logs
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Optional: nginx proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: deepl-proxy-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro  # For SSL certificates
+    depends_on:
+      - deepl-proxy
+    profiles:
+      - production  # Only start with --profile production
+
+volumes:
+  logs: 
