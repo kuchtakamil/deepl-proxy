@@ -3,6 +3,15 @@ use gloo_net::http::Request;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 
+// Helper function to get the backend URL based on current location
+fn get_backend_url() -> String {
+    let window = web_sys::window().expect("no global `window` exists");
+    let location = window.location();
+    let protocol = location.protocol().unwrap_or_else(|_| "http:".to_string());
+    let host = location.host().unwrap_or_else(|_| "localhost:3000".to_string());
+    format!("{}//{}",  protocol, host)
+}
+
 #[wasm_bindgen(start)]
 pub fn run_app() {
     yew::Renderer::<App>::new().render();
@@ -76,7 +85,7 @@ fn app() -> Html {
                     target_lang: Some("PL".to_string()),
                 };
 
-                match Request::post("http://127.0.0.1:3000/translate")
+                match Request::post(&format!("{}/translate", get_backend_url()))
                     .json(&request)
                     .unwrap()
                     .send()
@@ -129,7 +138,7 @@ fn app() -> Html {
                     target_lang: Some("EN".to_string()),
                 };
 
-                match Request::post("http://127.0.0.1:3000/translate")
+                match Request::post(&format!("{}/translate", get_backend_url()))
                     .json(&request)
                     .unwrap()
                     .send()
@@ -184,7 +193,7 @@ fn app() -> Html {
                     tone: None,
                 };
 
-                match Request::post("http://127.0.0.1:3000/improve")
+                match Request::post(&format!("{}/improve", get_backend_url()))
                     .json(&request)
                     .unwrap()
                     .send()

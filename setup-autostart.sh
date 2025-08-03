@@ -22,8 +22,18 @@ systemctl enable docker
 # Update the service file with the correct paths
 echo "📝 Updating service file with correct paths..."
 sed -i "s|WorkingDirectory=.*|WorkingDirectory=$CURRENT_DIR|g" deepl-proxy.service
-sed -i "s|ExecStart=.*|ExecStart=/usr/bin/docker-compose up -d|g" deepl-proxy.service
-sed -i "s|ExecStop=.*|ExecStop=/usr/bin/docker-compose down|g" deepl-proxy.service
+
+# Add or update ExecStartPre line for automatic pulling
+if grep -q "ExecStartPre=" deepl-proxy.service; then
+    # ExecStartPre exists, update it
+    sed -i "s|ExecStartPre=.*|ExecStartPre=/usr/bin/docker-compose -f docker-compose.pi.yml pull|g" deepl-proxy.service
+else
+    # ExecStartPre doesn't exist, add it before ExecStart
+    sed -i "/ExecStart=/i ExecStartPre=/usr/bin/docker-compose -f docker-compose.pi.yml pull" deepl-proxy.service
+fi
+
+sed -i "s|ExecStart=.*|ExecStart=/usr/bin/docker-compose -f docker-compose.pi.yml up -d|g" deepl-proxy.service
+sed -i "s|ExecStop=.*|ExecStop=/usr/bin/docker-compose -f docker-compose.pi.yml down|g" deepl-proxy.service
 
 # Copy service file to systemd directory
 echo "🔧 Installing systemd service..."
@@ -45,7 +55,7 @@ echo "  Stop:    sudo systemctl stop deepl-proxy"
 echo "  Status:  sudo systemctl status deepl-proxy"
 echo "  Logs:    sudo journalctl -u deepl-proxy -f"
 echo ""
-echo "🔄 The service will now automatically start on boot."
+echo "🔄 The service will now automatically start on boot and check for updates."
 echo "💡 To test: sudo systemctl start deepl-proxy"
 echo ""
 echo "⚠️  Make sure you have created the .env file with your DeepL API key!" 

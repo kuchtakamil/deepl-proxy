@@ -49,6 +49,9 @@ This guide explains how to build the Docker image on your Ubuntu PC and deploy i
    ```bash
    scp docker-compose.pi.yml pi@your-pi-ip:~/deepl-proxy/
    scp .env pi@your-pi-ip:~/deepl-proxy/  # If you have environment variables
+   scp update-service.sh pi@your-pi-ip:~/deepl-proxy/
+   scp setup-autostart.sh pi@your-pi-ip:~/deepl-proxy/
+   scp deepl-proxy.service pi@your-pi-ip:~/deepl-proxy/
    ```
 
 2. **SSH into your Raspberry Pi:**
@@ -77,7 +80,28 @@ This guide explains how to build the Docker image on your Ubuntu PC and deploy i
    docker-compose -f docker-compose.pi.yml ps
    ```
 
-## Step 3: Verify Deployment
+## Step 3: Setup Auto-Start (Optional but Recommended)
+
+To automatically start the service on boot and enable automatic updates:
+
+1. **Run the setup script:**
+   ```bash
+   chmod +x setup-autostart.sh
+   sudo ./setup-autostart.sh
+   ```
+
+   This will:
+   - Configure the service to start automatically on boot
+   - Enable automatic version checking on startup
+   - Pull the latest image from DockerHub before starting
+
+2. **Test the service:**
+   ```bash
+   sudo systemctl start deepl-proxy
+   sudo systemctl status deepl-proxy
+   ```
+
+## Step 4: Verify Deployment
 
 1. **Check if the service is running:**
    ```bash
@@ -92,9 +116,30 @@ This guide explains how to build the Docker image on your Ubuntu PC and deploy i
 3. **Access the web interface:**
    Open `http://your-pi-ip:3000` in your browser
 
-## Updating the Application
+## Automatic Updates
 
-When you make changes:
+### Automatic Update on Boot
+With the auto-start setup, the service will automatically:
+- Check for new versions on DockerHub every time the Pi starts
+- Pull the latest image if available
+- Start with the updated version
+
+### Manual Updates
+
+1. **Using the update script (Recommended):**
+   ```bash
+   ./update-service.sh
+   ```
+
+2. **Manual update process:**
+   ```bash
+   docker-compose -f docker-compose.pi.yml pull
+   docker-compose -f docker-compose.pi.yml up -d
+   ```
+
+## Legacy Update Method
+
+For manual updates without the auto-start setup:
 
 1. **On Ubuntu PC:**
    ```bash
@@ -119,9 +164,32 @@ If you prefer not to use Docker Hub, you can use:
   - Update the image name in both scripts accordingly
   - Ensure your Pi can access the private registry
 
+## Service Management Commands
+
+Once auto-start is configured:
+
+```bash
+# Start service
+sudo systemctl start deepl-proxy
+
+# Stop service
+sudo systemctl stop deepl-proxy
+
+# Check status
+sudo systemctl status deepl-proxy
+
+# View logs
+sudo journalctl -u deepl-proxy -f
+
+# Restart service (will also check for updates)
+sudo systemctl restart deepl-proxy
+```
+
 ## Troubleshooting
 
 - **Build fails:** Ensure Docker buildx supports ARM64: `docker buildx inspect --bootstrap`
 - **Push fails:** Check Docker Hub credentials: `docker login`
 - **Pi can't pull:** Verify network connectivity and image name
-- **Service won't start:** Check logs: `docker-compose -f docker-compose.pi.yml logs` 
+- **Service won't start:** Check logs: `docker-compose -f docker-compose.pi.yml logs`
+- **Auto-update fails:** Check internet connection and DockerHub availability
+- **Service fails to start:** Verify systemd service logs: `sudo journalctl -u deepl-proxy -f` 
