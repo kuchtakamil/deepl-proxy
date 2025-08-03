@@ -2,9 +2,8 @@ version: '3.8'
 
 services:
   deepl-proxy:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # Use pre-built image instead of building locally
+    image: kamilk86/deepl-proxy:latest
     container_name: deepl-proxy
     restart: unless-stopped
     ports:

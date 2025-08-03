@@ -1,5 +1,5 @@
 # Multi-stage build for RaspberryPi (ARM)
-FROM --platform=linux/arm64 rust:1.75-slim as builder
+FROM --platform=linux/arm64 rust:latest as builder
 
 # Install dependencies for building
 RUN apt-get update && apt-get install -y \
